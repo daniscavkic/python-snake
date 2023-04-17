@@ -3,7 +3,7 @@ from textwrap import fill
 
 import pygame
 import random
-
+from itertools import islice
 pygame.init()
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((1200, 720))
@@ -17,7 +17,14 @@ keyPressedS = False
 keyPressedA = False
 keyPressedD = False
 test = [keyPressedW, keyPressedS, keyPressedA, keyPressedD]
+counter = 0
+cords = []
+cordsXY = []
+clock.tick(60)
 
+def splitingList(data_list):
+    new_list = [data_list[i:i + 2] for i in range(0, len(data_list), 2)]
+    return new_list
 
 def setFalse(keys):
     keys[0] = False
@@ -34,19 +41,19 @@ def spawnObject():
 
 def move():
     if test[0]:
-        player_pos.y -= 0.4
+        player_pos.y -= 8
         if player_pos.y < 5:
             test[0] = False
     if test[1]:
-        player_pos.y += 0.4
+        player_pos.y += 8
         if player_pos.y > 715:
             test[1] = False
     if test[2]:
-        player_pos.x -= 0.4
+        player_pos.x -= 8
         if player_pos.x < 5:
             test[2] = False
     if test[3]:
-        player_pos.x += 0.4
+        player_pos.x += 8
         if player_pos.x > 1275:
             test[3] = False
 
@@ -57,26 +64,31 @@ def object_Interaction():
 
 
 def snake_drawing_head(player_pos, color):
+    global counter
+    global cords
     pygame.draw.circle(screen, color, player_pos, 20)
+    cordsXY.append(player_pos.x)
+    cordsXY.append(player_pos.y)
+    if counter > score:
+        counter = 0
+        print(splitingList(cordsXY))
+        cordsXY.clear()
+        cords.clear()
+    counter = counter + 1
 
-
-def snake_drawing_tail(player_pos, score, keys):
-
+def snake_drawing_tail(score, keys):
     nextXPosition = lastHeadPosition.x
     nextYPosition = lastHeadPosition.y
 
     for i in range(score):
-            print("here")
-            if keys[0] == True:
-                snake_drawing_head(pygame.Vector2(nextXPosition, nextYPosition + (i + 1) * 10), "black")
-            if keys[1] == True:
-                snake_drawing_head(pygame.Vector2(nextXPosition, nextYPosition - (i + 1) * 10), "black")
-            if keys[2] == True:
-                snake_drawing_head(pygame.Vector2(nextXPosition + (i + 1) * 10, nextYPosition), "black")
-            if keys[3] == True:
-                snake_drawing_head(pygame.Vector2(nextXPosition - (i + 1) * 10, nextYPosition), "black")
-
-
+        if keys[0]:
+            snake_drawing_head(pygame.Vector2(nextXPosition, nextYPosition + (i + 1) * 20), "black")
+        if keys[1]:
+            snake_drawing_head(pygame.Vector2(nextXPosition, nextYPosition - (i + 1) * 20), "black")
+        if keys[2]:
+            snake_drawing_head(pygame.Vector2(nextXPosition + (i + 1) * 20, nextYPosition), "black")
+        if keys[3]:
+            snake_drawing_head(pygame.Vector2(nextXPosition - (i + 1) * 20, nextYPosition), "black")
 
 
 def food_generatior():
@@ -90,37 +102,31 @@ def food_drawing():
     pygame.draw.circle(screen, "black", foodCords, 20)
 
 
-def growTheSnake(score, lastHeadPosition):
-
+def growTheSnake(score):
     snake_drawing_head(player_pos, "red")
-    snake_drawing_tail(player_pos, score, test)
+    snake_drawing_tail(score, test)
 
 
 def keys_manager():
     global test
-    last_position_of_head_before_changing_the_direction = player_pos
+
     if keys[pygame.K_w]:
         if not test[1]:
             test = setFalse(test)
             test[0] = True
-            last_position_of_head_before_changing_the_direction = player_pos
     if keys[pygame.K_s]:
         if not test[0]:
             test = setFalse(test)
             test[1] = True
-            last_position_of_head_before_changing_the_direction = player_pos
     if keys[pygame.K_a]:
         if not test[3]:
             test = setFalse(test)
             test[2] = True
-            last_position_of_head_before_changing_the_direction = player_pos
     if keys[pygame.K_d]:
         if not test[2]:
             test = setFalse(test)
             test[3] = True
-            last_position_of_head_before_changing_the_direction = player_pos
-
-    return last_position_of_head_before_changing_the_direction
+    return player_pos
 
 
 while running:
@@ -131,32 +137,24 @@ while running:
 
     screen.fill("green")
 
-
-
     food_generatior()
 
     food_drawing()
-
-    #print(player_pos.y, foodCords.y)
 
     if object_Interaction():
         food = False
         score += 1
 
     move()
-
     keys = pygame.key.get_pressed()
-
     lastHeadPosition = keys_manager()
-    growTheSnake(score, lastHeadPosition)
+    growTheSnake(score)
     myfont = pygame.font.SysFont("monospace", 15)
     label = " " + str(score) + " "
-
-    # render text
     label = myfont.render(label, 1, (0, 0, 0))
     screen.blit(label, (100, 100))
-    #print(test)
 
     pygame.display.flip()
+    clock.tick(30)
 
 pygame.quit()
